@@ -22,13 +22,13 @@ data.gen <- function(xmean, ymean, n, label, stdev = 1.0) {
 #    another column to the data frame specifying which is which.)
 build.dataset <- function(f1.xmean, f1.ymean, f2.xmean, f2.ymean, 
                            n, train.proportion = 0.7, stdev = 1.0) {
-	# CG: Builds training and test sets as a list. 
+	# CG: Builds training and test sets as a list, with same number of f1 and f2 observations.
 	#     Data in f1 will have label of 0 and f2 data will have label of 1.
-	f1 <- data.gen(f1.xmean, f1.ymean, n, 0, stdev)
-	f2 <- data.gen(f2.xmean, f2.ymean, n, 1, stdev)
+	f1 <- data.gen(f1.xmean, f1.ymean, n/2, 0, stdev)
+	f2 <- data.gen(f2.xmean, f2.ymean, n/2, 1, stdev)
 	all.data <- rbind(f1, f2)
-	train.inds <- sample(1:(2*n), train.proportion * 2 * n)
-	test.inds <- setdiff(1:(2*n), train.inds)
+	train.inds <- sample(1:(nrow(f1) + nrow(f2)), train.proportion * n)
+	test.inds <- setdiff(1:(nrow(f1) + nrow(f2)), train.inds)
 	list(train = all.data[train.inds,], test = all.data[test.inds,])
 	# NOTE: Access list elements using "$" - just like a data frame.
 }
