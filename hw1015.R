@@ -10,8 +10,29 @@
 #    - Assemble this all in a data frame with columns x1, x2, and class.
 #    - (All this should be configurable.)
 
+data.gen <- function(xmean, ymean, n, label, stdev = 1.0) {
+	# CG: Generates a data distribution based on the inputs. 
+	#     It is not required that SD = 0 for ident. cov. matrix.
+	data.frame(x = rnorm(n, mean = xmean, sd = stdev),
+	           y = rnorm(n, mean = ymean, sd = stdev),
+			   label = rep(label, n))
+}
+
 # II. Randomly separate data into test and training sets (perhaps by adding
 #    another column to the data frame specifying which is which.)
+build.dataset <- function(f1.xmean, f1.ymean, f2.xmean, f2.ymean, 
+                           n, train.proportion = 0.7, stdev = 1.0) {
+	# CG: Builds training and test sets as a list, with same number of f1 and f2 observations.
+	#     Data in f1 will have label of 0 and f2 data will have label of 1.
+	f1 <- data.gen(f1.xmean, f1.ymean, n/2, 0, stdev)
+	f2 <- data.gen(f2.xmean, f2.ymean, n/2, 1, stdev)
+	all.data <- rbind(f1, f2)
+	train.inds <- sample(1:(nrow(f1) + nrow(f2)), train.proportion * n)
+	test.inds <- setdiff(1:(nrow(f1) + nrow(f2)), train.inds)
+	list(train = all.data[train.inds,], test = all.data[test.inds,])
+	# NOTE: Access list elements using "$" - just like a data frame.
+}
+
 
 # III. Build and test knn classifiers.
 #    1. Build the interpoint distance matrix for all points, training and
@@ -27,6 +48,27 @@
 #          iv. Count it as a success or failure.
 #       b. Record in some data structure the percentage of successes.
 
+library(class) # Load package for KNN.
+
+successes <- function(predicted, actual) {
+	# CG: Get the number of successes in a result set. Assumes length(predicted) == length(actual).
+	sum(sapply(1:length(predicted), function(i) { as.numeric(predicted[i] == actual[i]) }))
+}
+
+knn.success.rate <- function(train, test, kval) {
+	# CG: Take in a set of training and test sets and a k. Return the resulting percent success.
+	predicted <- knn(subset(train, select = -c(3)), subset(test, select = -c(3)), 
+	                 cl = as.factor(train$label), k = kval)
+	actual <- as.factor(test$label)
+	successes(predicted, actual) / length(predicted) # Return the proportion of successes.
+}
+
+knn.success.rates <- function(train, test, kvals) {
+	# CG: Get the success rates for each k in kvals as a k x 2 matrix (each row is a k).
+	rates <- sapply(kvals, function(k) { knn.success.rate(train, test, k) })
+	cbind(k = kvals, success.rate = rates)
+}
+
 # IV. Build and test linear classifier. (are we doing logistic regression
 # here?)
 #    1. Compute the training line coefficients for the line which optimally
@@ -36,6 +78,26 @@
 #       a. Figure out which side of the training line it's on.
 #       b. Compare that to what the class actually is for that test point.
 #       c. Count it as a success or failure.
+
+# CG: We actually don't need the coefficients to do the classification (at least here). 
+#     However, if we want to do this manually (in case I misunderstood your intent), this is how:
+#     1) Create model: mod <- glm(label ~ ., data = train, family = "binomial")
+#     2) Get coefficients: b0 <- coefficients(model)["(Intercept)"] # intercept
+#                          b1 <- coefficients(model)["x"] # gives x-coeff 
+#                          b2 <- coefficients(model)["y"] # gives y coef.
+#     3) Predicted probability of being class 1: prob(x,y) = 1 / (1 + exp(-(b0 + b1x + b2y))
+#     4) Classification: if prob(x, y) <= 0.5 then class = 0, otherwise class = 1.
+
+logit.success.rate <- function(train, test) {
+	# CG: Gets the success rate for the given training and test sets using logistic regression.
+	model <- glm(label ~ ., data = train, family = "binomial")
+	# Prediction: Rounds to 0 or 1 based on predicted probability of being a 1:
+	predicted <- sapply(predict(model, newdata = test, type = "response"), function(x) {round(x)})
+	actual <- test$label
+	successes(predicted, actual) / length(predicted) # Return the proportion of successes.
+}
+
+# CG: Stephen - all yours ;)
 
 # V. Plot results.
 #    1. Plot k vs. test error.
