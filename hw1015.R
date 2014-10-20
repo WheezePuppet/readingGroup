@@ -1,6 +1,11 @@
 
 # Stephen's and Chris's homework for reading group 10/15
 
+library(MASS)
+library(ggplot2)
+require(doParallel)
+registerDoParallel(16)
+
 # I. Generate data.
 #    - f1 and f2 should each contain some number of two-dimensional points.
 #    - f1 will have mean (3,0) and f2 will have mean (0,3).
@@ -16,6 +21,10 @@ data.gen <- function(xmean, ymean, n, label, stdev = 1.0) {
 	data.frame(x = rnorm(n, mean = xmean, sd = stdev),
 	           y = rnorm(n, mean = ymean, sd = stdev),
 			   label = rep(label, n))
+    # SD: If x and y are generated independently like this, then by definition
+    # they will have covar 0. This is fine for now; eventually I'd like to use
+    # mvrnorm() from the MASS package so that a covar matrix with non-zero
+    # off-diagonals can be included.
 }
 
 # II. Randomly separate data into test and training sets (perhaps by adding
@@ -31,6 +40,10 @@ build.dataset <- function(f1.xmean, f1.ymean, f2.xmean, f2.ymean,
 	test.inds <- setdiff(1:(nrow(f1) + nrow(f2)), train.inds)
 	list(train = all.data[train.inds,], test = all.data[test.inds,])
 	# NOTE: Access list elements using "$" - just like a data frame.
+
+    # SD: I'd like to be able to have f1 and f2 have different numbers of
+    # points. We could either pass an n1 and n2, or pass an n and a
+    # f1.proportion.
 }
 
 
@@ -65,9 +78,12 @@ knn.success.rate <- function(train, test, kval) {
 
 knn.success.rates <- function(train, test, kvals) {
 	# CG: Get the success rates for each k in kvals as a k x 2 matrix (each row is a k).
-	rates <- sapply(kvals, function(k) { knn.success.rate(train, test, k) })
-	cbind(k = kvals, success.rate = rates)
+    rates <- foreach(k=kvals, .combine=rbind) %dopar% {
+	    c(k=k,success.rate=knn.success.rate(train, test, k))
+    }
+    rates
 }
+
 
 # IV. Build and test linear classifier. (are we doing logistic regression
 # here?)
@@ -97,9 +113,48 @@ logit.success.rate <- function(train, test) {
 	successes(predicted, actual) / length(predicted) # Return the proportion of successes.
 }
 
-# CG: Stephen - all yours ;)
-
 # V. Plot results.
 #    1. Plot k vs. test error.
 #    2. Add a point to the plot for the linear classifier test error, using
 #    the correct number of degrees of freedom.
+
+plot.dataset <- function(dataset, plot.test=FALSE) {
+    if (plot.test) {
+        to.plot <- dataset$test
+        title <- "Test points"
+    } else {
+        to.plot <- dataset$train
+        title <- "Training points"
+    }
+    xpts <- c(dataset$train$x,dataset$test$x)
+    ypts <- c(dataset$train$y,dataset$test$y)
+    p <- ggplot(to.plot,aes(x=x,y=y,color=as.factor(label)))
+    print(p + geom_point() + ggtitle(title) + labs(color="Label") +
+        xlim(min(xpts),max(xpts)) +
+        ylim(min(xpts),max(xpts)))
+}
+
+plot.knn.point.results <- function(train, test, kval) {
+	# SD: Take in a set of training and test sets and a k. Plot correct and
+    # incorrect classifications.
+	predicted <- knn(subset(train, select = -c(3)), subset(test, select = -c(3)), 
+	                 cl = as.factor(train$label), k = kval)
+	actual <- as.factor(test$label)
+
+    test$correct <- predicted != actual
+
+    p <- ggplot(test,
+        aes(x=x,y=y,color=as.factor(label),shape=correct,size=correct)) +
+        scale_size_discrete(range=c(2,3)) +
+        scale_shape_manual(values=c(20,15))
+    print(p + geom_point() + ggtitle(paste0("KNN Results (k=",kval,")")) +
+        labs(color="Label"))
+}
+
+plot.knn.aggregate.results <- function(dataset, kvals) {
+    # SD: Plot k vs. success rate for each k value in the kvals vector.
+    p <- ggplot(as.data.frame(
+            knn.success.rates(dataset$train, dataset$test, kvals)),
+        aes(x=k,y=success.rate))
+    print(p + geom_line())
+}
