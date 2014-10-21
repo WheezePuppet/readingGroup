@@ -15,26 +15,29 @@ registerDoParallel(16)
 #    - Assemble this all in a data frame with columns x1, x2, and class.
 #    - (All this should be configurable.)
 
-data.gen <- function(xmean, ymean, n, label, stdev = 1.0) {
+data.gen <- function(xmean, ymean, n, label, stdev = 1.0, correl = 0.0) {
 	# CG: Generates a data distribution based on the inputs. 
 	#     It is not required that SD = 0 for ident. cov. matrix.
-	data.frame(x = rnorm(n, mean = xmean, sd = stdev),
-	           y = rnorm(n, mean = ymean, sd = stdev),
-			   label = rep(label, n))
-    # SD: If x and y are generated independently like this, then by definition
-    # they will have covar 0. This is fine for now; eventually I'd like to use
-    # mvrnorm() from the MASS package so that a covar matrix with non-zero
-    # off-diagonals can be included.
+	# CG: **UPDATE (10/20) -- Added in capability to specify correlation between x and y
+	#       which enables specification of arbitrary cov. matrix. Didn't use the MASS package.
+	xv = rnorm(n)
+	rd = rnorm(n)
+	yv = sapply(1:n, function(i){(correl * xv[i]) + (sqrt(1 - correl * correl) * rd[i])})
+	xv <- sapply(xv, function(z) {(z * stdev) + xmean})
+	yv <- sapply(yv, function(z) {(z * stdev) + ymean})
+	data.frame(x = xv, y = yv, label = rep(label, n))
 }
 
 # II. Randomly separate data into test and training sets (perhaps by adding
 #    another column to the data frame specifying which is which.)
 build.dataset <- function(f1.xmean, f1.ymean, f2.xmean, f2.ymean, 
-                           n, train.proportion = 0.7, stdev = 1.0) {
+                           n, train.proportion = 0.7, stdev = 1.0, 
+						   correl.f1 = 0.0, correl.f2 = 0.0) {
 	# CG: Builds training and test sets as a list, with same number of f1 and f2 observations.
 	#     Data in f1 will have label of 0 and f2 data will have label of 1.
-	f1 <- data.gen(f1.xmean, f1.ymean, n/2, 0, stdev)
-	f2 <- data.gen(f2.xmean, f2.ymean, n/2, 1, stdev)
+	# CG: **UPDATE (10/20) - Added in ability to specify correlations for f1 and f2.
+	f1 <- data.gen(f1.xmean, f1.ymean, n/2, 0, stdev, correl.f1)
+	f2 <- data.gen(f2.xmean, f2.ymean, n/2, 1, stdev, correl.f2)
 	all.data <- rbind(f1, f2)
 	train.inds <- sample(1:(nrow(f1) + nrow(f2)), train.proportion * n)
 	test.inds <- setdiff(1:(nrow(f1) + nrow(f2)), train.inds)
