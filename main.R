@@ -1,9 +1,11 @@
 source("hw1015.R")
 
+library(dplyr)
+
 # Parameters:
 
 # Plot specific success/error points for each k?
-plot.point.performance <- TRUE  
+plot.point.performance <- TRUE
 
 n.pts <- 2000  # Total number of points (divided equally between classes)
 f1.xmean <- 2
@@ -22,13 +24,12 @@ pause <- function(...) {
 
 ds <- build.dataset(f1.xmean, f1.ymean, f2.xmean, f2.ymean, n.pts)
 
-plot.dataset(ds,FALSE)
-pause("Training points.")
-plot.dataset(ds,TRUE)
-pause("Test points.")
+plot.dataset(ds)
+pause("Data set.")
 if (plot.point.performance) {
     for (k in seq(1,max.k,2)) {
-        plot.knn.point.results(ds$train,ds$test,k)
+        plot.knn.point.results(filter(ds,group=="train"),
+            filter(ds,group=="test"),k)
         pause("Performance for k=",k,".")
     }
 }

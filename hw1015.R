@@ -2,6 +2,7 @@
 # Stephen's and Chris's homework for reading group 10/15
 
 library(MASS)
+library(dplyr)
 library(ggplot2)
 require(doParallel)
 registerDoParallel(16)
@@ -38,11 +39,14 @@ build.dataset <- function(f1.xmean, f1.ymean, f2.xmean, f2.ymean,
 	# CG: **UPDATE (10/20) - Added in ability to specify correlations for f1 and f2.
 	f1 <- data.gen(f1.xmean, f1.ymean, n/2, 0, stdev, correl.f1)
 	f2 <- data.gen(f2.xmean, f2.ymean, n/2, 1, stdev, correl.f2)
-	all.data <- rbind(f1, f2)
+	all.data <- data.frame(cbind(rbind(f1, f2),"xyz"))
+    names(all.data) <- c("x","y","label","group")
+    levels(all.data$group) <- c("train","test","xyz")
 	train.inds <- sample(1:(nrow(f1) + nrow(f2)), train.proportion * n)
-	test.inds <- setdiff(1:(nrow(f1) + nrow(f2)), train.inds)
-	list(train = all.data[train.inds,], test = all.data[test.inds,])
-	# NOTE: Access list elements using "$" - just like a data frame.
+    test.inds <- setdiff(1:(nrow(f1) + nrow(f2)), train.inds)
+    all.data[train.inds,"group"] <- "train"
+    all.data[test.inds,"group"] <- "test"
+    return(all.data)
 
     # SD: I'd like to be able to have f1 and f2 have different numbers of
     # points. We could either pass an n1 and n2, or pass an n and a
@@ -73,8 +77,9 @@ successes <- function(predicted, actual) {
 
 knn.success.rate <- function(train, test, kval) {
 	# CG: Take in a set of training and test sets and a k. Return the resulting percent success.
-	predicted <- knn(subset(train, select = -c(3)), subset(test, select = -c(3)), 
-	                 cl = as.factor(train$label), k = kval)
+	predicted <- knn(subset(train, select = c(1,2)), 
+        subset(test, select = c(1,2)), 
+        cl = as.factor(train$label), k = kval)
 	actual <- as.factor(test$label)
 	successes(predicted, actual) / length(predicted) # Return the proportion of successes.
 }
@@ -122,26 +127,21 @@ logit.success.rate <- function(train, test) {
 #    the correct number of degrees of freedom.
 
 plot.dataset <- function(dataset, plot.test=FALSE) {
-    if (plot.test) {
-        to.plot <- dataset$test
-        title <- "Test points"
-    } else {
-        to.plot <- dataset$train
-        title <- "Training points"
-    }
-    xpts <- c(dataset$train$x,dataset$test$x)
-    ypts <- c(dataset$train$y,dataset$test$y)
-    p <- ggplot(to.plot,aes(x=x,y=y,color=as.factor(label)))
-    print(p + geom_point() + ggtitle(title) + labs(color="Label") +
-        xlim(min(xpts),max(xpts)) +
-        ylim(min(xpts),max(xpts)))
+    # SD: Plot the raw dataset: training points in one pane, and test in
+    # another.
+    p <- ggplot(dataset,aes(x=x,y=y,color=as.factor(label)))
+    p <- p + facet_grid(.~group)
+    print(p + geom_point() + ggtitle("Data set") + labs(color="Label") +
+        xlim(min(dataset$x),max(dataset$x)) +
+        ylim(min(dataset$y),max(dataset$y)))
 }
 
 plot.knn.point.results <- function(train, test, kval) {
 	# SD: Take in a set of training and test sets and a k. Plot correct and
     # incorrect classifications.
-	predicted <- knn(subset(train, select = -c(3)), subset(test, select = -c(3)), 
-	                 cl = as.factor(train$label), k = kval)
+	predicted <- knn(subset(train, select = c(1,2)), 
+        subset(test, select = c(1,2)), 
+        cl = as.factor(train$label), k = kval)
 	actual <- as.factor(test$label)
 
     test$correct <- predicted != actual
@@ -157,7 +157,8 @@ plot.knn.point.results <- function(train, test, kval) {
 plot.knn.aggregate.results <- function(dataset, kvals) {
     # SD: Plot k vs. success rate for each k value in the kvals vector.
     p <- ggplot(as.data.frame(
-            knn.success.rates(dataset$train, dataset$test, kvals)),
+            knn.success.rates(filter(dataset,group=="train"), 
+                filter(dataset,group=="test"), kvals)),
         aes(x=k,y=success.rate))
     print(p + geom_line())
 }
