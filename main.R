@@ -24,14 +24,25 @@ pause <- function(...) {
 
 ds <- build.dataset(f1.xmean, f1.ymean, f2.xmean, f2.ymean, n.pts)
 
-plot.dataset(ds)
+print(get.dataset.plot(ds))
 pause("Data set.")
 if (plot.point.performance) {
     for (k in seq(1,max.k,2)) {
-        plot.knn.point.results(filter(ds,group=="train"),
-            filter(ds,group=="test"),k)
+        print(get.knn.point.results.plot(filter(ds,group=="train"),
+            filter(ds,group=="test"),k))
         pause("Performance for k=",k,".")
     }
 }
 
-plot.knn.aggregate.results(ds, seq(1,max.k,2))
+agg.plot <- get.knn.aggregate.results.plot(ds, seq(1,max.k,2))
+
+deg.freedom.logit <- 5   #?????
+
+logit.pt <- data.frame(x=deg.freedom.logit,
+   y=logit.success.rate(
+        filter(ds,group=="train"), filter(ds,group=="test")))
+
+print(agg.plot + 
+    geom_point(data=logit.pt, aes(x=x,y=y),color="red",size=5) +
+    annotate("text", x=logit.pt$x, y=logit.pt$y,
+        label="logit classification"))

@@ -114,9 +114,10 @@ knn.success.rates <- function(train, test, kvals) {
 
 logit.success.rate <- function(train, test) {
 	# CG: Gets the success rate for the given training and test sets using logistic regression.
-	model <- glm(label ~ ., data = train, family = "binomial")
+	model <- glm(label ~ ., data = dplyr::select(train,x,y,label), 
+        family = "binomial")
 	# Prediction: Rounds to 0 or 1 based on predicted probability of being a 1:
-	predicted <- sapply(predict(model, newdata = test, type = "response"), function(x) {round(x)})
+	predicted <- sapply(predict(model, newdata = dplyr::select(test,x,y), type = "response"), function(x) {round(x)})
 	actual <- test$label
 	successes(predicted, actual) / length(predicted) # Return the proportion of successes.
 }
@@ -126,17 +127,17 @@ logit.success.rate <- function(train, test) {
 #    2. Add a point to the plot for the linear classifier test error, using
 #    the correct number of degrees of freedom.
 
-plot.dataset <- function(dataset, plot.test=FALSE) {
+get.dataset.plot <- function(dataset, plot.test=FALSE) {
     # SD: Plot the raw dataset: training points in one pane, and test in
     # another.
     p <- ggplot(dataset,aes(x=x,y=y,color=as.factor(label)))
     p <- p + facet_grid(.~group)
-    print(p + geom_point() + ggtitle("Data set") + labs(color="Label") +
+    return(p + geom_point() + ggtitle("Data set") + labs(color="Label") +
         xlim(min(dataset$x),max(dataset$x)) +
         ylim(min(dataset$y),max(dataset$y)))
 }
 
-plot.knn.point.results <- function(train, test, kval) {
+get.knn.point.results.plot <- function(train, test, kval) {
 	# SD: Take in a set of training and test sets and a k. Plot correct and
     # incorrect classifications.
 	predicted <- knn(subset(train, select = c(1,2)), 
@@ -150,15 +151,15 @@ plot.knn.point.results <- function(train, test, kval) {
         aes(x=x,y=y,color=as.factor(label),shape=correct,size=correct)) +
         scale_size_discrete(range=c(2,3)) +
         scale_shape_manual(values=c(20,15))
-    print(p + geom_point() + ggtitle(paste0("KNN Results (k=",kval,")")) +
+    return(p + geom_point() + ggtitle(paste0("KNN Results (k=",kval,")")) +
         labs(color="Label"))
 }
 
-plot.knn.aggregate.results <- function(dataset, kvals) {
+get.knn.aggregate.results.plot <- function(dataset, kvals) {
     # SD: Plot k vs. success rate for each k value in the kvals vector.
     p <- ggplot(as.data.frame(
             knn.success.rates(filter(dataset,group=="train"), 
                 filter(dataset,group=="test"), kvals)),
         aes(x=k,y=success.rate))
-    print(p + geom_line())
+    return(p + geom_line())
 }
