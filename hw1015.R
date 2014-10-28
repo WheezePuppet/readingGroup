@@ -16,29 +16,38 @@ registerDoParallel(16)
 #    - Assemble this all in a data frame with columns x1, x2, and class.
 #    - (All this should be configurable.)
 
-data.gen <- function(xmean, ymean, n, label, stdev = 1.0, correl = 0.0) {
+data.gen <- function(xmean, ymean, n, label, xstdev = 1.0, ystdev = 1.0,
+    correl = 0.0) {
+
 	# CG: Generates a data distribution based on the inputs. 
-	#     It is not required that SD = 0 for ident. cov. matrix.
 	# CG: **UPDATE (10/20) -- Added in capability to specify correlation between x and y
 	#       which enables specification of arbitrary cov. matrix. Didn't use the MASS package.
+    # SD: **UPDATE (10/27) -- Allow stdev of two variables to be different.
 	xv = rnorm(n)
 	rd = rnorm(n)
 	yv = sapply(1:n, function(i){(correl * xv[i]) + (sqrt(1 - correl * correl) * rd[i])})
-	xv <- sapply(xv, function(z) {(z * stdev) + xmean})
-	yv <- sapply(yv, function(z) {(z * stdev) + ymean})
+	xv <- sapply(xv, function(z) {(z * xstdev) + xmean})
+	yv <- sapply(yv, function(z) {(z * ystdev) + ymean})
 	data.frame(x = xv, y = yv, label = rep(label, n))
 }
 
 # II. Randomly separate data into test and training sets (perhaps by adding
 #    another column to the data frame specifying which is which.)
 build.dataset <- function(f1.xmean, f1.ymean, f2.xmean, f2.ymean, 
-                           n, train.proportion = 0.7, stdev = 1.0, 
-						   correl.f1 = 0.0, correl.f2 = 0.0) {
+                           f1.xstdev = 1.0, f1.ystdev = 1.0, 
+                           f2.xstdev = 1.0, f2.ystdev = 1.0,
+                           correl.f1 = 0.0, correl.f2 = 0.0,
+                           n, train.proportion = 0.7,
+                           prop.class.1 = 0.5) {
 	# CG: Builds training and test sets as a list, with same number of f1 and f2 observations.
 	#     Data in f1 will have label of 0 and f2 data will have label of 1.
 	# CG: **UPDATE (10/20) - Added in ability to specify correlations for f1 and f2.
-	f1 <- data.gen(f1.xmean, f1.ymean, n/2, 0, stdev, correl.f1)
-	f2 <- data.gen(f2.xmean, f2.ymean, n/2, 1, stdev, correl.f2)
+    # SD: **UPDATE (10/27) - Allow stdev of each variable in each class to be
+    # different.
+	f1 <- data.gen(f1.xmean, f1.ymean, n * prop.class.1, 1, xstdev = f1.xstdev, 
+        ystdev = f1.ystdev, correl.f1)
+	f2 <- data.gen(f2.xmean, f2.ymean, n * (1-prop.class.1), 2, 
+        xstdev = f2.xstdev, ystdev = f2.ystdev, correl.f2)
 	all.data <- data.frame(cbind(rbind(f1, f2),"xyz"))
     names(all.data) <- c("x","y","label","group")
     levels(all.data$group) <- c("train","test","xyz")

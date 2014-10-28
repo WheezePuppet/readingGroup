@@ -22,7 +22,7 @@ pause <- function(...) {
     readline()
 }
 
-ds <- build.dataset(f1.xmean, f1.ymean, f2.xmean, f2.ymean, n.pts)
+ds <- build.dataset(f1.xmean, f1.ymean, f2.xmean, f2.ymean, n=n.pts)
 
 print(get.dataset.plot(ds))
 pause("Data set.")
