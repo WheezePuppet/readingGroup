@@ -86,9 +86,7 @@ successes <- function(predicted, actual) {
 
 knn.success.rate <- function(train, test, kval) {
 	# CG: Take in a set of training and test sets and a k. Return the resulting percent success.
-	predicted <- knn(subset(train, select = c(1,2)), 
-        subset(test, select = c(1,2)), 
-        cl = as.factor(train$label), k = kval)
+	predicted <- predict.knn(train, test, kval)
 	actual <- as.factor(test$label)
 	successes(predicted, actual) / length(predicted) # Return the proportion of successes.
 }
@@ -146,12 +144,16 @@ get.dataset.plot <- function(dataset, plot.test=FALSE) {
         ylim(min(dataset$y),max(dataset$y)))
 }
 
+predict.knn <- function(train, test, kval) {
+	knn(subset(train, select = c(1,2)), 
+        subset(test, select = c(1,2)), 
+        cl = as.factor(train$label), k = kval)
+}
+    
 get.knn.point.results.plot <- function(train, test, kval) {
 	# SD: Take in a set of training and test sets and a k. Plot correct and
     # incorrect classifications.
-	predicted <- knn(subset(train, select = c(1,2)), 
-        subset(test, select = c(1,2)), 
-        cl = as.factor(train$label), k = kval)
+	predicted <- predict.knn(train, test, kval)
 	actual <- as.factor(test$label)
 
     test$correct <- predicted != actual
