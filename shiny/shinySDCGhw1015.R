@@ -5,7 +5,7 @@ source("../hw1015.R")
 
 shinySDCGhw1015.ui <- function() {
 
-    tabsetPanel(selected="classifier comparison",
+    tabsetPanel(selected="k vs successRate",
         tabPanel("k vs successRate",
             sidebarLayout(
                 sidebarPanel(
@@ -128,9 +128,10 @@ shinySDCGhw1015.server <- function(input,output,session) {
                     ggplot(preds,aes(x,y,group=side,color=as.factor(pred),
                         size=scenario,shape=scenario)) + 
                         geom_point() + facet_grid(facets=.~side) +
-                        scale_size_manual(values=c(9,9,2)) +
+                        scale_size_manual(values=c("left.correct"=9,
+                            "right.correct"=9,"same"=3)) +
                         scale_shape_manual(values=c("left.correct"="L",
-                            "right.correct"="R","same"="o")) +
+                            "right.correct"="R","same"="+")) +
                         geom_hline(xintercept=0) + geom_vline(yintercept=0) +
                         ggtitle(paste0("Comparison of k=",
                             input$kvals.compare[[1]]," vs. k=",
