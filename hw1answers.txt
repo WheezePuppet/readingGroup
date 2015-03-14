@@ -1,0 +1,18 @@
+Stephen's answers:
+
+1. [d]  (though it depends on how you interpret "model" in (i).)
+
+2. [a]  (but why iv?)
+
+3. P[2nd black] = P[2nd black | chose 1st bag] * P[chose 1st bag] + 
+                  P[2nd black | chose 2nd bag] * P[chose 2nd bag] =
+
+                  1 * 2/3  + 0 * 1/3  = 2/3
+
+4. (1-.55)^10 = 0.0003405
+
+5. 1-(1-.55)^1000 = 0.2886
+
+6. [e] (They each agree with one target function on all inputs, 3 target
+functions on 2 of 3 or 1 of 3, so score for all is 12.)
+    
