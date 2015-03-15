@@ -23,15 +23,6 @@ run.til.convergence <- function(num.data.points=100, plot=FALSE) {
     # Compute data points: outputs.
     data$y <- ifelse(data$x1 * f.slope + f.intercept > data$x2, 1, -1)
 
-    # Plot points.
-    if (plot) {
-        p <- ggplot(data, aes(x=x1, y=x2, col=factor(y))) + 
-            geom_abline(intercept=f.intercept, slope=f.slope, color="purple") +
-            #geom_point() + 
-            geom_text(aes(x=x1,y=x2,label=row.names(data))) +
-            scale_color_manual(values=c("red","blue"))
-        print(p)
-    }
 
     # Initial weights.
     w <- rep(0,3)
@@ -64,6 +55,26 @@ run.til.convergence <- function(num.data.points=100, plot=FALSE) {
         }
     }
 
+    # Plot points and separator.
+    if (plot) {
+        p <- ggplot(data, aes(x=x1, y=x2, col=factor(y))) + 
+            geom_abline(intercept=f.intercept, slope=f.slope, color="purple",
+                size=2) +
+            geom_point() + 
+            scale_color_manual(values=c("red","blue")) +
+            geom_abline(intercept=linear.parameters.for(w)["intercept"],
+                        slope=linear.parameters.for(w)["slope"])
+        cols <- colorRampPalette(c("white","black"))(nrow(w.history))
+        for (iter in 1:nrow(w.history)) {
+            bob <- linear.parameters.for(w.history[iter,])
+            p <- p + geom_abline(
+                intercept=linear.parameters.for(w.history[iter,])["intercept"],
+                        slope=linear.parameters.for(w.history[iter,])["slope"],
+                col=cols[iter])
+        }
+        print(p)
+    }
+
     w.history <- cbind(iter=1:nrow(w.history), w.history)
 
     return(w.history)
@@ -92,4 +103,23 @@ plot.w.history <- function(w.history) {
         geom_line(aes(y=val, col=w.coord)) +
         labs(x="iteration", y="value", title="Weights over time")
     print(p)
+}
+
+
+# Given a 3-element weight vector, return a named vector with the
+# corresponding slope and x2-intercept.
+linear.parameters.for <- function(w) {
+    if (!is.atomic(w) || length(w) != 3) {
+        stop("w not a three element vector.")
+    }
+    names(w) <- NULL
+
+    # Remember: the equation for determining which class the point belongs to
+    # has its boundary at:
+    #    w0 + w1*x1 + w2*x2 = 0
+    # which means that the slope and x2-intercept of this line are:
+    #    -w2*x2 = w1*x1 + w0
+    #    x2 = (w1*x1)/-w2 + w0/-w2
+    #    x2 = (w1/-w2)*x1 + w0/-w2
+    c(slope=-w[2]/w[3], intercept=-w[1]/w[3])
 }
