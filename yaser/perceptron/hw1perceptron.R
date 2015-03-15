@@ -61,7 +61,7 @@ run.til.convergence <- function(num.data.points=100, plot=FALSE) {
             geom_abline(intercept=f.intercept, slope=f.slope, color="purple",
                 size=2) +
             geom_point() + 
-            scale_color_manual(values=c("red","blue")) +
+            scale_color_manual(name="Class",values=c("red","blue")) +
             geom_abline(intercept=linear.parameters.for(w)["intercept"],
                         slope=linear.parameters.for(w)["slope"])
         cols <- colorRampPalette(c("white","black"))(nrow(w.history))
