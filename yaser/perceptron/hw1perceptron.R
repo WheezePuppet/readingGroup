@@ -60,18 +60,19 @@ run.til.convergence <- function(num.data.points=100, plot=FALSE,
     if (plot) {
         p <- ggplot(data, aes(x=x1, y=x2, col=factor(y))) + 
             geom_abline(intercept=f.intercept, slope=f.slope, color="purple",
-                size=2) +
+                size=1.2) +
             geom_point() + 
             scale_color_manual(name="Class",values=c("red","blue")) +
             geom_abline(intercept=linear.parameters.for(w)["intercept"],
-                        slope=linear.parameters.for(w)["slope"])
+                        slope=linear.parameters.for(w)["slope"]) +
+            expand_limits(x=c(-1.5,1.5),y=c(-1.5,1.5))
+
         cols <- colorRampPalette(c("white","black"))(nrow(w.history))
         for (iter in 1:nrow(w.history)) {
-            bob <- linear.parameters.for(w.history[iter,])
             p <- p + geom_abline(
                 intercept=linear.parameters.for(w.history[iter,])["intercept"],
                         slope=linear.parameters.for(w.history[iter,])["slope"],
-                col=cols[iter])
+                col=ifelse(iter==nrow(w.history),"green",cols[iter]))
         }
         print(p)
     }
@@ -83,6 +84,8 @@ run.til.convergence <- function(num.data.points=100, plot=FALSE,
 
 
 
+# Run the perceptron algorithm num.runs times on num.data.points each, and
+# return a vector of the number of iterations each one took to converge.
 measure.convergence.times <- function(num.runs=1000,num.data.points=100,
                                                                 plot=TRUE) {
     results <- foreach(run=1:num.runs, .combine=c) %dopar% {
@@ -90,7 +93,13 @@ measure.convergence.times <- function(num.runs=1000,num.data.points=100,
     }
     if (plot) {
         p <- ggplot(data.frame(num.iter=results),aes(x=num.iter)) + 
-            geom_bar(stat="bin",fill="yellow",col="black")
+            geom_bar(stat="bin",fill="yellow",col="black",
+                binwidth=num.data.points/10) +
+            geom_vline(xintercept=mean(results),color="blue") +
+            scale_x_continuous(breaks=seq(0,1,.1)*max(results))+
+            annotate("text",x=mean(results),y=Inf,vjust=2,col="blue",
+                label=paste0("mean=",mean(results))) +
+            labs(x="Number of iterations to converge")
         print(p)
     }
     results
@@ -102,7 +111,9 @@ plot.w.history <- function(w.history) {
     w.hist.df <- gather(w.hist.df, w.coord, val, w0:w2)
     p <- ggplot(w.hist.df, aes(x=iter)) +
         geom_line(aes(y=val, col=w.coord)) +
-        labs(x="iteration", y="value", title="Weights over time")
+        labs(x="iteration", y="value", title="Weights over time") +
+        scale_color_discrete(name="Weight coordinate",
+            labels=c(expression(w[0]),expression(w[1]),expression(w[2])))
     print(p)
 }
 

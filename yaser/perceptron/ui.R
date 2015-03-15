@@ -20,6 +20,12 @@ shinyUI(fluidPage(
                 ),
                 tabPanel("Weights History",
                     plotOutput("historyPlot",height="600px")
+                ),
+                tabPanel("Convergence times",
+                    HTML("<div style=\"margin-top:2em;margin-bottom:3em;font-size:large;\">This is for <a href=\"https://work.caltech.edu/homework/hw1.pdf\">homework problems 7-10</a>."),
+                    sliderInput("ntrials","Number of trials",min=0,max=1000,
+                        value=100),
+                    plotOutput("convergencePlot",height="400px")
                 )
             )
         )
