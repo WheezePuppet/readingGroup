@@ -17,6 +17,9 @@ shinyUI(fluidPage(
             tabsetPanel(
                 tabPanel("Points",
                     plotOutput("mainPlot",height="600px")
+                ),
+                tabPanel("Weights History",
+                    plotOutput("historyPlot",height="600px")
                 )
             )
         )
