@@ -8,7 +8,8 @@ max.iter <- 2000
 # Elizabeth: plot all the separators (for the same data set.)
 
 
-run.til.convergence <- function(num.data.points=100, plot=FALSE) {
+run.til.convergence <- function(num.data.points=100, plot=FALSE,
+    verbose=TRUE) {
 
     # Create data points: inputs.
     data <- data.frame(
@@ -37,10 +38,10 @@ run.til.convergence <- function(num.data.points=100, plot=FALSE) {
         misclass.pts <- filter(data,y!=h)
 
         if (nrow(misclass.pts) <= 0) {
-            cat("Converged!\n")
+            if (verbose) cat("Converged!\n")
             break
         } else {
-            cat(nrow(misclass.pts), " misclassified points (",
+            if (verbose) cat(nrow(misclass.pts), " misclassified points (",
                 paste(row.names(data)[data$y != data$h],
                     collapse=","),").\n",sep="")
         }
