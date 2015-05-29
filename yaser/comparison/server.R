@@ -29,13 +29,14 @@ shinyServer(function(input,output,session) {
 
     output$performancePlot <- renderPlot({
         if (input$runit < 1) return(NULL)
-        plot.data <- data.frame(alg=factor(c("LDA","QDA","Log reg")),
+        plot.data <- data.frame(alg=factor(c("LDA","QDA","Log reg"),
+                levels=c("LDA","QDA","Log reg")),
             perf=c(lda.accuracy(the.data.set),qda.accuracy(the.data.set),
                                                 log.reg.accuracy(the.data.set))
         )
         p <- ggplot(plot.data) + 
             geom_bar(aes(x=alg,fill=alg,y=perf),stat="identity") +
-            ylim(0,1) + scale_fill_manual(values=c("green","red","blue")) +
+            ylim(0,1) + scale_fill_manual(values=c("green","blue","red")) +
             ggtitle("Classifier performance")
         print(p)
     })
