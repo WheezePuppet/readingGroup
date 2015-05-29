@@ -9,7 +9,7 @@ max.iter <- 2000
 
 
 run.til.convergence <- function(num.data.points=100, plot=FALSE,
-    verbose=TRUE) {
+    verbose=FALSE) {
 
     # Create data points: inputs.
     data <- data.frame(

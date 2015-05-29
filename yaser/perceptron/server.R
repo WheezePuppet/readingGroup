@@ -16,7 +16,7 @@ shinyServer(function(input,output,session) {
     })
     
     output$historyPlot <- renderPlot({
-        if (input$runit < 1) return(NULL)
+        if (isolate(input$runit) < 1) return(NULL)
         isolate({
             plot.w.history(w.history)
         })
