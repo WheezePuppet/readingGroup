@@ -8,35 +8,6 @@ generate.variate <- function(num.data.points, gaussianness) {
        (1-gaussianness) * runif(num.data.points, -1, 1)
 }
 
-# (Helper function, called by generate.data.)
-generate.data.set <- function(num.class.1, mean.1, covar.1, 
-    num.class.neg1, mean.neg1, covar.neg1, gaussianness) {
-
-# TODO: implement gaussianness
-
-    # Create class 1 data.
-    data.1 <- data.frame(
-        cbind(
-            mvrnorm(num.class.1, mean.1,
-                matrix(c(1,covar.1,covar.1,1),nrow=2)),
-            1
-        )
-    )
-
-    # Create class -1 data.
-    data.neg1 <- data.frame(
-        cbind(
-            mvrnorm(num.class.neg1, mean.neg1,
-                matrix(c(1,covar.neg1,covar.neg1,1),nrow=2)),
-            -1
-        )
-    )
-
-    ret.val <- rbind(data.1, data.neg1)
-    names(ret.val) <- c("x1","x2","y")
-    ret.val$y <- as.factor(ret.val$y)
-    ret.val
-}
 
 # Return a list with two data frames:
 #   "training": num.pts (x1, x2, y) tuples. 
@@ -59,6 +30,42 @@ generate.data <- function(num.pts=N.PTS, covar.1=0, covar.neg1=0,
 
     mean.1 <- c(0,0)
     mean.neg1 <- c(mean.x1.neg1,mean.x2.neg1)
+
+
+    # (helper function)
+    generate.data.set <- function(num.class.1, mean.1, covar.1, 
+        num.class.neg1, mean.neg1, covar.neg1, gaussianness) {
+
+        # (helper helper function)
+        generate.data.set.for.class <- function(num.pts, mean.of.pts, covar) {
+
+            uniform <- matrix(c(
+                # 2 std dev's each way? maybe?
+                runif(num.pts, mean.of.pts[1]-2, mean.of.pts[1]+2),
+                runif(num.pts, mean.of.pts[2]-2, mean.of.pts[2]+2)),
+                nrow=num.pts,byrow=FALSE)
+            gaussian <- mvrnorm(num.pts, mean.of.pts,
+                matrix(c(1,covar,covar,1),nrow=2))
+            data.frame(
+                uniform * (1-gaussianness) +
+                gaussian * (gaussianness)
+            )
+        }
+
+        # Create class 1 data.
+        data.1 <- generate.data.set.for.class(num.class.1, mean.1, covar.1)
+        data.1$y <- 1
+
+        # Create class -1 data.
+        data.neg1 <- generate.data.set.for.class(num.class.neg1, mean.neg1,
+            covar.neg1)
+        data.neg1$y <- -1
+
+        ret.val <- rbind(data.1, data.neg1)
+        names(ret.val) <- c("x1","x2","y")
+        ret.val$y <- as.factor(ret.val$y)
+        ret.val
+    }
 
     list(
         training=generate.data.set(num.class.1, mean.1, covar.1,
