@@ -90,8 +90,11 @@ qda.accuracy <- function(data) {
 log.reg.accuracy <- function(data) {
     
     log.reg.model <- glm(y~x1+x2,data=data$training, family=binomial(logit))
-    predictions <- as.factor(ifelse(predict(log.reg.model,data$test[,1:2]) >
-0, 1, -1))
+    # Need type="response" in the predict() call to get probabilities in the
+    # [0,1] range; see ?predict.glm.
+    predictions <- as.factor(
+        ifelse(predict(log.reg.model,data$test[,1:2],type="response") > .5,
+            1, -1))
     sum(
         predictions == data$test$y
     ) / nrow(data$test)
