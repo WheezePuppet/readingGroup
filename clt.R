@@ -35,11 +35,11 @@ gen.variates <- function(rv.func, num.variates=1e4) {
 some.normal.variates <- gen.variates(normal.rv,N.PTS)
 some.weird.variates <- gen.variates(weird.rv,N.PTS)
 
-create.hist <- function(a.vector, title="") {
+create.hist <- function(a.vector, title="",binwidth=5) {
     df <- data.frame(a.vector)
     names(df) <- "x"
     return(ggplot(df,aes(x=x)) +
-        geom_histogram(fill="yellow",color="black") +
+        geom_histogram(fill="yellow",color="black",binwidth=binwidth) +
         ggtitle(paste0(title,"(",length(a.vector),")")))
 }
 
@@ -59,8 +59,12 @@ gen.means <- function(rv.func, num.means=1e4, verbose=FALSE) {
     }
 }
 
-gen.means(normal.rv, N.TRIALS, verbose=TRUE) -> normal.means
-gen.means(weird.rv, N.TRIALS, verbose=TRUE) -> weird.means
+if (!exists("normal.means")) {
+    gen.means(normal.rv, N.TRIALS, verbose=TRUE) -> normal.means
+}
+if (!exists("gen.means")) {
+    gen.means(weird.rv, N.TRIALS, verbose=TRUE) -> weird.means
+}
 
 normal.means.hist <- create.hist(normal.means,"normal means")
 weird.means.hist <- create.hist(weird.means,"weird means")
@@ -76,4 +80,9 @@ if (show.plots) {
     readline()
     plot(weird.means.hist)
     readline()
+    for (num in 10:length(weird.means)) {
+        weird.means.hist <- create.hist(weird.means[1:num],
+            paste0("weird means"), binwidth=.2)
+        plot(weird.means.hist)
+    }
 }
