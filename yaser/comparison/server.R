@@ -11,10 +11,13 @@ shinyServer(function(input,output,session) {
         if (input$runit < 1) return(NULL)
 
         isolate({
-            the.data.set <<- generate.data(input$npts, covar.1=input$cov1,
-                covar.neg1=input$covn1, 
-                mean.x1.neg1=input$classn1meanx1,
-                mean.x2.neg1=input$classn1meanx2,
+            the.data.set <<- generate.data(input$npts, 
+                covar.neg1=matrix(c(
+                    input$classn1var1,
+                    input$classn1covar12,
+                    input$classn1covar12,
+                    input$classn1var2), nrow=2),
+                mean.neg1=c(input$classn1meanx1,input$classn1meanx2),
                 prior=input$prior,
                 gaussianness=input$gaussianness)
             p <- ggplot(the.data.set$training) + 

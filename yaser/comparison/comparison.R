@@ -14,24 +14,19 @@ generate.variate <- function(num.data.points, gaussianness) {
 #   "training": num.pts (x1, x2, y) tuples. 
 #   "test": num.pts (x1, x2, y) tuples. 
 #
-# covar.1: the covariance between x1 and x2 for class 1.
-# covar.neg1: the covariance between x1 and x2 for class -1.
-# mean.x1.neg1: the mean of the x1 variable for class -1. (The mean for class
-#   1 is always 0.)
-# mean.x2.neg1: the mean of the x2 variable for class -1. (The mean for class
-#   1 is always 0.)
+# covar.neg1: the 2x2 covariance matrix for class -1. (class 1 is identity.)
+# mean.neg1: the 2-d mean for class -1. (class 1 is always mean=c(0,0).)
 # prior: the fraction of num.pts that are in class 1.
 # gaussianness: the contribution towards x1 and x2 from a normal distro
 #   (1-gaussianness will be from a uniform[-1,1].)  
-generate.data <- function(num.pts=N.PTS, covar.1=0, covar.neg1=0, 
-    mean.x1.neg1=1, mean.x2.neg1=1, prior=.5, gaussianness=1.0) {
+generate.data <- function(num.pts=N.PTS, covar.neg1=diag(2), 
+    mean.neg1=c(0,0), prior=.5, gaussianness=1.0) {
 
     num.class.1 <- trunc(prior * num.pts)
     num.class.neg1 <- num.pts - num.class.1
 
     mean.1 <- c(0,0)
-    mean.neg1 <- c(mean.x1.neg1,mean.x2.neg1)
-
+    covar.1 <- diag(2)
 
     # (helper function)
     generate.data.set <- function(num.class.1, mean.1, covar.1, 
@@ -40,13 +35,13 @@ generate.data <- function(num.pts=N.PTS, covar.1=0, covar.neg1=0,
         # (helper helper function)
         generate.data.set.for.class <- function(num.pts, mean.of.pts, covar) {
 
+            # TODO: replace with Dave's way (Cauchy)
             uniform <- matrix(c(
                 # 2 std dev's each way? maybe?
                 runif(num.pts, mean.of.pts[1]-2, mean.of.pts[1]+2),
                 runif(num.pts, mean.of.pts[2]-2, mean.of.pts[2]+2)),
                 nrow=num.pts,byrow=FALSE)
-            gaussian <- mvrnorm(num.pts, mean.of.pts,
-                matrix(c(1,covar,covar,1),nrow=2))
+            gaussian <- mvrnorm(num.pts, mean.of.pts, covar)
             data.frame(
                 uniform * (1-gaussianness) +
                 gaussian * (gaussianness)
@@ -122,7 +117,7 @@ compute.slope.intercept <- function(coeff, PRIOR) {
 
 main <- function() {
 
-    data <- generate.data(prior=PRIOR,mean.x1.neg1=5,mean.x2.neg1=2)
+    data <- generate.data(prior=PRIOR,mean.neg1=c(5,2))
 
     lda.run <- run.lda(data)
     qda.run <- run.qda(data)
