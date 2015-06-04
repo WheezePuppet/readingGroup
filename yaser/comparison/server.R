@@ -31,8 +31,10 @@ shinyServer(function(input,output,session) {
         if (input$runit < 1) return(NULL)
         plot.data <- data.frame(alg=factor(c("LDA","QDA","Log reg"),
                 levels=c("LDA","QDA","Log reg")),
-            perf=c(lda.accuracy(the.data.set),qda.accuracy(the.data.set),
-                                                log.reg.accuracy(the.data.set))
+            perf=sapply(list(run.lda(the.data.set),
+                          run.qda(the.data.set),
+                          run.log.reg(the.data.set)),
+                function(thing) thing$accuracy)
         )
         p <- ggplot(plot.data) + 
             geom_bar(aes(x=alg,fill=alg,y=perf),stat="identity") +

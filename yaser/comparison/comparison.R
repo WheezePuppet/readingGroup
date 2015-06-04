@@ -2,6 +2,7 @@ library(MASS)
 library(dplyr)
 
 N.PTS <- 2000
+PRIOR <- .5
 
 generate.variate <- function(num.data.points, gaussianness) {
     gaussianness * rnorm(num.data.points, mean=0, sd=1) +
@@ -76,42 +77,68 @@ generate.data <- function(num.pts=N.PTS, covar.1=0, covar.neg1=0,
 }
 
 
-lda.accuracy <- function(data) {
+run.lda <- function(data) {
     
 # TODO: interaction terms?
 
     lda.model <- lda(y~x1+x2,data$training)
-    sum(
-        predict(lda.model,data$test[,1:2])$class == data$test$y
-    ) / nrow(data$test)
+    list(model=lda.model,
+        accuracy=sum(
+            predict(lda.model,data$test[,1:2])$class == data$test$y
+        ) / nrow(data$test)
+    )
 }
 
-qda.accuracy <- function(data) {
+run.qda <- function(data) {
     
     qda.model <- qda(y~x1+x2,data$training)
-    sum(
-        predict(qda.model,data$test[,1:2])$class == data$test$y
-    ) / nrow(data$test)
+    list(model=qda.model,
+        accuracy=sum(
+            predict(qda.model,data$test[,1:2])$class == data$test$y
+        ) / nrow(data$test)
+    )
 }
 
-log.reg.accuracy <- function(data) {
+run.log.reg <- function(data, prior=.5) {
     
     log.reg.model <- glm(y~x1+x2,data=data$training, family=binomial(logit))
     # Need type="response" in the predict() call to get probabilities in the
     # [0,1] range; see ?predict.glm.
     predictions <- as.factor(
-        ifelse(predict(log.reg.model,data$test[,1:2],type="response") > .5,
+        ifelse(predict(log.reg.model,data$test[,1:2],type="response") > PRIOR,
             1, -1))
-    sum(
-        predictions == data$test$y
-    ) / nrow(data$test)
+    list(model=log.reg.model,
+        accuracy=sum(
+            predictions == data$test$y
+        ) / nrow(data$test)
+    )
+}
+
+compute.slope.intercept <- function(coeff, PRIOR) {
+    stopifnot(is.numeric(coeff), length(coeff) == 3)
+    list(slope=-coeff[2]/coeff[3],
+        intercept=(-PRIOR-coeff[1])/coeff[3])
 }
 
 main <- function() {
-    data <- generate.data()
+
+    data <- generate.data(prior=PRIOR,mean.x1.neg1=5,mean.x2.neg1=2)
+
+    lda.run <- run.lda(data)
+    qda.run <- run.qda(data)
+    log.reg.run <- run.log.reg(data,PRIOR)
+
+    cat("LDA accuracy:",lda.run$accuracy,"\n")
+    cat("QDA accuracy:",qda.run$accuracy,"\n")
+    cat("Log accuracy:",log.reg.run$accuracy,"\n")
+
     p <- ggplot(data$training) + geom_point(aes(x=x1, y=x2, color=y))
+
+    # Plot the Log Reg decision boundary in black.
+    # (How to do for LDA?? No clue.)
+    sl.int <- compute.slope.intercept(coef(log.reg.run$model),PRIOR)
+    p <- p + geom_abline(intercept=sl.int$intercept,slope=sl.int$slope,
+        col="black",size=1.1)
+
     print(p)
-    cat("LDA accuracy:",lda.accuracy(data),"\n")
-    cat("QDA accuracy:",qda.accuracy(data),"\n")
-    cat("Log accuracy:",log.reg.accuracy(data),"\n")
 }    
