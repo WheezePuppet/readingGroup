@@ -42,12 +42,19 @@ shinyUI(fluidPage(
         ),
 
         mainPanel(
-            fluidRow(
-                column(width=7,
-                    plotOutput("mainPlot",height="500px")
+            tabsetPanel(
+                tabPanel("Performance",
+                    fluidRow(
+                        column(width=7,
+                            plotOutput("mainPlot",height="500px")
+                        ),
+                        column(width=5,
+                            plotOutput("performancePlot",height="500px")
+                        )
+                    )
                 ),
-                column(width=5,
-                    plotOutput("performancePlot",height="500px")
+                tabPanel("Posteriors",
+                    plotOutput("posteriorPlot")
                 )
             )
         )
