@@ -94,6 +94,16 @@ run.qda <- function(data) {
     )
 }
 
+get.posterior.probs <- function(model) {
+    if ("lda" %in% class(model)) {
+        return(predict(model)$posterior[,2])
+    } else if ("glm" %in% class(model)) {
+        return(predict(model))
+    } else if ("qda" %in% class(model)) {
+        stop("QDA posterior probs not supported.")
+    }
+}
+
 run.log.reg <- function(data, prior=.5) {
     
     log.reg.model <- glm(y~x1+x2,data=data$training, family=binomial(logit))
@@ -108,6 +118,7 @@ run.log.reg <- function(data, prior=.5) {
         ) / nrow(data$test)
     )
 }
+
 
 compute.slope.intercept <- function(coeff, PRIOR) {
     stopifnot(is.numeric(coeff), length(coeff) == 3)
