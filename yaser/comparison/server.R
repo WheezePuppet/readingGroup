@@ -7,7 +7,8 @@ shinyServer(function(input,output,session) {
     source("comparison.R")
 
     values <- reactiveValues(
-        the.data.set=NULL
+        the.data.set=NULL,
+        stuff=NULL
     )
 
     observeEvent(input$runit, {
@@ -20,6 +21,9 @@ shinyServer(function(input,output,session) {
             mean.neg1=c(input$classn1meanx1,input$classn1meanx2),
             prior=input$prior,
             gaussianness=input$gaussianness)
+        values$stuff=list(lda.stuff=run.lda(values$the.data.set),
+                          qda.stuff=run.qda(values$the.data.set),
+                          log.reg.stuff=run.log.reg(values$the.data.set))
     })
 
     output$mainPlot <- renderPlot({
@@ -41,9 +45,7 @@ shinyServer(function(input,output,session) {
         if (input$runit < 1) return(NULL)
         plot.data <- data.frame(alg=factor(c("LDA","QDA","Log reg"),
                 levels=c("LDA","QDA","Log reg")),
-            perf=sapply(list(run.lda(values$the.data.set),
-                          run.qda(values$the.data.set),
-                          run.log.reg(values$the.data.set)),
+            perf=sapply(values$stuff,
                 function(thing) thing$accuracy)
         )
         p <- ggplot(plot.data) + 
@@ -53,8 +55,38 @@ shinyServer(function(input,output,session) {
         print(p)
     })
 
-    output$posteriorPlot <- renderPlot({
+    output$posteriorLDAQDAPlot <- renderPlot({
 
+        if (input$runit < 1) return(NULL)
+
+        posterior.plot.data <- data.frame(
+            lda.post=get.posterior.probs(values$stuff$lda.stuff$model),
+            qda.post=get.posterior.probs(values$stuff$qda.stuff$model),
+            true.class=values$the.data.set$training$y
+        )
+        p <- ggplot(posterior.plot.data) +
+            geom_point(aes(x=lda.post,y=qda.post,col=true.class)) +
+            ggtitle("Posterior probabilities: QDA vs. LDA") +
+            xlab("LDA") +
+            ylab("QDA")
+        print(p)
+
+    })
+    output$posteriorLDALogPlot <- renderPlot({
+
+        if (input$runit < 1) return(NULL)
+
+        posterior.plot.data <- data.frame(
+            lda.post=get.posterior.probs(values$stuff$lda.stuff$model),
+            log.reg.post=get.posterior.probs(values$stuff$log.reg.stuff$model),
+            true.class=values$the.data.set$training$y
+        )
+        p <- ggplot(posterior.plot.data) +
+            geom_point(aes(x=lda.post,y=log.reg.post,col=true.class)) +
+            ggtitle("Posterior probabilities: Log reg vs. LDA") +
+            xlab("LDA") +
+            ylab("Logistic regression")
+        print(p)
 
     })
 

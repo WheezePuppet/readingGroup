@@ -95,12 +95,10 @@ run.qda <- function(data) {
 }
 
 get.posterior.probs <- function(model) {
-    if ("lda" %in% class(model)) {
+    if (any(c("lda","qda") %in% class(model))) {
         return(predict(model)$posterior[,2])
     } else if ("glm" %in% class(model)) {
-        return(predict(model))
-    } else if ("qda" %in% class(model)) {
-        stop("QDA posterior probs not supported.")
+        return(predict(model,type="response"))
     }
 }
 

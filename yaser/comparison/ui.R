@@ -54,7 +54,14 @@ shinyUI(fluidPage(
                     )
                 ),
                 tabPanel("Posteriors",
-                    plotOutput("posteriorPlot")
+                    fluidRow(
+                        column(width=6,
+                            plotOutput("posteriorLDALogPlot",height="500px")
+                        ),
+                        column(width=6,
+                            plotOutput("posteriorLDAQDAPlot",height="500px")
+                        )
+                    )
                 )
             )
         )
