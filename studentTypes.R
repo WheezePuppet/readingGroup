@@ -69,7 +69,7 @@ ggplot(plot.data, aes(x=quizzes,y=HWs,color=type,shape=correct)) +
     expand_limits(x=c(0,10),y=c(0,100)) +
     scale_y_continuous(breaks=seq(0,100,10)) + 
     scale_x_continuous(breaks=0:10) +
-    scale_color_manual(values=c("blue","red","darkgrey")) -> p
+    scale_color_manual(values=c("blue","red","green")) -> p
 p <- p + annotate("text",x=8.2,y=90,label="worker",size=4,family="serif") +
          annotate("text",x=9.2,y=82,label="genius",size=4,family="serif") +
          annotate("text",x=6.4,y=66.5,label="sucky",size=4,family="serif")
