@@ -1,4 +1,6 @@
 
+# lab 6 for my 305 grade data.
+
 require(leaps)
 #fullfit <- regsubsets(Final~quizzes+HWs+Labs,data=grades)
 #summary(fullfit)$bic
