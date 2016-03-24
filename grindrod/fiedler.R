@@ -4,31 +4,34 @@
 
 library(igraph)
 
-force.clique <- function(clique.participants) {
+
+force.clique <- function(g,clique.participants) {
 
     # The idiomatic R way, which doesn't work
-    #   my.g[clique.participants, clique.participants] <<- 1
-    #   for (i in clique.participants) my.g[i,i] <<- 0
+    #   my.g[clique.participants, clique.participants] <- 1
+    #   for (i in clique.participants) my.g[i,i] <- 0
 
     # The caveman way, which does.
     for (i in clique.participants) {
         for (j in clique.participants) {
             if (i != j) {
-                my.g[i,j] <<- 1
+                g[i,j] <- 1
             }
         }
     }
+    return(g)
 }
 
 
 num.vertices <- 12
-my.g <- erdos.renyi.game(num.vertices, .15, type="gnp", directed=FALSE, 
+my.g <- erdos.renyi.game(num.vertices, .25, type="gnp", directed=FALSE, 
     loops=FALSE)
+V(my.g)$name <- LETTERS[1:num.vertices]
 
 # Force a clique.
 clique.participants <- sample(1:num.vertices,5)
 cat("Forcing a clique among:",clique.participants,"\n")
-force.clique(clique.participants)
+my.g <- force.clique(my.g,clique.participants)
 
 plot(my.g)
 num.components <- count_components(my.g)
@@ -57,8 +60,13 @@ abline(h=fiedler.eigenval,lty="dotted")
 cat("\nFiedler eigenvalue is ",fiedler.eigenval,".\n",sep="")
 cat("\nThe Fiedler eigenvector is:\n")
 print(round(fiedler.eigenvec,2))
+
+plot(fiedler.eigenvec, pch=LETTERS[1:num.vertices],
+    main="The Fiedler eigenvector")
+abline(h=0)
 readline("Press enter.")
 
 cat("\nThe permuted matrix, according to Fiedler eigenvector, is:\n")
-print(my.g.adj[order(fiedler.eigenvec),order(fiedler.eigenvec)])
+the.correct.order <- order(fiedler.eigenvec)
+print(my.g.adj[the.correct.order,the.correct.order])
 
