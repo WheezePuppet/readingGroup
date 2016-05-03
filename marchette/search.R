@@ -62,15 +62,22 @@ search.lots <- function(num.attempts=50, limit.per.attempt=1e4) {
     }
 }
 
-plot.dup.graphs <- function() {
+plot.dup.graphs <- function(to.files=FALSE) {
     invisible(
-        lapply(list.files(pattern="dupConn"), function(fn) {
+        lapply(list.files(pattern="dupConn.*RData"), function(fn) {
             load(fn)
             alg.conn.g <- alg.conn(laplacian_matrix(g))
+            if (to.files) {
+                pdf(tempfile(pattern="plot",tmpdir=getwd(),fileext=".pdf"))
+            }
             plot(g,
                 main=bquote(lambda[2]==.(round(alg.conn.g$eval,4)) ~ 
                     "of multiplicity" ~ .(round(alg.conn.g$multiplicity))))
-            readline()
+            if (to.files) {
+                dev.off()
+            } else {
+                readline()
+            }
         })
     )
 }
