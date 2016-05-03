@@ -3,6 +3,8 @@
 # connectivity.
 
 library(igraph)
+library(doParallel)
+registerDoParallel(8)
 
 set.seed(1234)
 
@@ -16,40 +18,56 @@ alg.conn <- function(laplacian) {
         multiplicity=sum(evals == alg.conn.eval)))
 }
 
-generate.random.graph <- function() erdos.renyi.game(20, .25)
+generate.random.graph <- function() {
+    erdos.renyi.game(sample(10:40,1), runif(1,min=.25,max=.5))
+}
 
-LIMIT <- 1e4
-alg.conns <- vector(length=LIMIT)
-vertex.conns <- vector(length=LIMIT)
-ctr <- 0
-g <- generate.random.graph()
-alg.conn.g <- alg.conn(laplacian_matrix(g))
-while (alg.conn.g$multiplicity == 1  &&  ctr < LIMIT) {
-
-    ctr <- ctr + 1
-    if (ctr %% 100 == 0) {
-        cat("Tried", ctr,"graphs...\n")
-    }
-
+search.for.dups <- function(limit=1e4) {
+    ctr <- 0
     g <- generate.random.graph()
     alg.conn.g <- alg.conn(laplacian_matrix(g))
+    while (alg.conn.g$multiplicity == 1  &&  ctr < limit) {
 
-    # Just for interest...
-    alg.conns[ctr] <- alg.conn.g$eval
-    vertex.conns[ctr] <- vertex.connectivity(g)
+        ctr <- ctr + 1
+        if (ctr %% 1000 == 0) {
+            cat("Tried", ctr,"graphs...\n")
+        }
+
+        g <- generate.random.graph()
+        alg.conn.g <- alg.conn(laplacian_matrix(g))
+    }
+
+    if (ctr < limit) {
+        cat("FOUND ONE!\n")
+        save.file <- tempfile(pattern="dupConn", tmpdir=getwd(),
+            fileext=".RData")
+        save(g, file=save.file)
+        return(1)
+    }
+    cat("None.\n")
+    return(0)
 }
 
-if (alg.conn.g$multiplicity > 1) {
-    cat("FOUND ONE!\n")
-    plot(g, 
-        main=bquote(lambda[2]==.(round(alg.conn.g$eval,5)) ~ "of multiplicity"
-        ~ .(round(alg.conn.g$multiplicity))))
-    print(g)
-    readline()
+# Begin a quest to find random graphs with duplicate alg conns, using all
+# available cores. The number of attempts (chunks of searches) and the limit
+# (maximum number of searches per attempt) can both be specified.
+#
+# Returns the number of attempts that successfully found such a graph. The
+# graph itself will be written to a (randomly-named) .RData file starting with
+# "dupConn".
+search.lots <- function(num.attempts=50, limit.per.attempt=1e4) {
+    foreach(attempt=1:num.attempts, .combine=`+`) %dopar% {
+        cat("Attempt #",attempt,"...\n",sep="")
+        search.for.dups(limit.per.attempt)
+    }
 }
 
-hist(alg.conns, breaks=20, main="algebraic connectivities")
-readline()
-plot(vertex.conns, alg.conns, xlab="vertex connectivity",
-    ylab="algebraic connectivity")
-abline(0,1)
+plot.dup.graphs <- function() {
+    invisible(
+        lapply(list.files(pattern="dupConn"), function(fn) {
+            load(fn)
+            plot(g)
+            readline()
+        })
+    )
+}
