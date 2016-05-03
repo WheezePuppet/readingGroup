@@ -66,7 +66,10 @@ plot.dup.graphs <- function() {
     invisible(
         lapply(list.files(pattern="dupConn"), function(fn) {
             load(fn)
-            plot(g)
+            alg.conn.g <- alg.conn(laplacian_matrix(g))
+            plot(g,
+                main=bquote(lambda[2]==.(round(alg.conn.g$eval,4)) ~ 
+                    "of multiplicity" ~ .(round(alg.conn.g$multiplicity))))
             readline()
         })
     )
