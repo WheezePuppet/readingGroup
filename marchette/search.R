@@ -18,8 +18,10 @@ alg.conn <- function(laplacian,TOLERANCE=1e-10) {
         multiplicity=sum(evals == alg.conn.eval)))
 }
 
-generate.random.graph <- function(connected.only=TRUE) {
-    g <- erdos.renyi.game(sample(10:40,1), runif(1,min=.25,max=.5))
+generate.random.graph <- function(connected.only=TRUE,
+    num.vertices.range=c(10,40), edge.prob.range=c(.25,.5)) {
+    g <- erdos.renyi.game(sample(num.vertices.range,1), 
+        runif(1,min=edge.prob.range[1],max=edge.prob.range[2]))
 	 if(connected.only){
 	    cls <- components(g)
 		 if(cls$no>1){
