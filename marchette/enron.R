@@ -1,6 +1,8 @@
 
+library(tcltk)
 
-enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001)
+
+enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001,interactive=TRUE)
 {
 	## Remove self-loops.
 	a <- which(edges[,2]==edges[,3])
@@ -28,6 +30,11 @@ enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001)
 	Q <- diag(184)
 	A <- diag(184)
 
+    if (interactive) {
+        pb <- tkProgressBar(title=paste0("remove.dups=",remove.dups,
+                ", alpha=",alpha),min=0,max=length(times))
+    }
+
 	out <- data.frame(time=times,
                       most.influenced.user=rep(0L,length(times)),
 	                  most.influenced.value=rep(0.0,length(times)),
@@ -35,7 +42,10 @@ enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001)
 	                  most.influential.value=rep(0.0,length(times)))
 	for(i in 1:length(times)){
 
-        if (i %% 100 == 0) cat(i,"...\n",sep="")
+        if (interactive) {
+            setTkProgressBar(pb,i,label=paste0("Computing Katz centrality: ",
+                round(100*i/length(times),0),"%"))
+        }
 
         # Build the factor for the ith edge, namely (I - alpha*A_i)^-1, where
         # A_i is the adjacency matrix that includes only the ith edge.
@@ -62,6 +72,9 @@ enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001)
 		out$most.influential.user[i] <- which.max(influencing.metrics)
 		out$most.influential.value[i] <- max(influencing.metrics)
 	}
+    if (interactive) {
+        close(pb)
+    }
 	out
 }
 
