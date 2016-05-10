@@ -21,17 +21,39 @@ enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001)
 	edges <- edges[order(times),]
 	times <- sort(times)
 
+    # Q -- the (evolving) centrality matrix. Each time through the loop,
+    # include the factor for the graph with (only) the ith edge.
+    # A -- the factor for the ith edge. This is (I - alpha*A_i)^-1, where A_i
+    # is the adjacency matrix that includes only the ith edge.
 	Q <- diag(184)
 	A <- diag(184)
 	out <- data.frame(time=times,user=rep(0L,length(times)),
 	                  value=rep(0.0,length(times)))
 	for(i in 1:length(times)){
+
+        if (i %% 100 == 0) cat(i,"...\n",sep="")
+
+        # Build the factor for the ith edge, namely (I - alpha*A_i)^-1, where
+        # A_i is the adjacency matrix that includes only the ith edge.
+
+        # As it happens, we can compute this inverse without actually doing a
+        # matrix operation: the matrix with 1's on diagonal, x in one other
+        # element, and 0's everwhere else has as its inverse the same matrix
+        # but with -x in that element. So the factor for the ith edge is
+        # simply the matrix with 1's on diagonal, -(-alpha) in the ith edge's
+        # position, and 0's everywhere else.
 		A[edges[i,2],edges[i,3]] <- alpha
+
+        # Multiply the ith edge's factor into Q, and reset A.
 		Q <- Q%*%A
 		A[edges[i,2],edges[i,3]] <- 0
 		a <- apply(Q,1,sum)
 		out$user[i] <- which.max(a)
 		out$value[i] <- max(a)
+
+        # Compute the "most influenced" (receiving) vertex and "most
+        # influential" (sending) vertex, if the dynamic graph were to stop at
+        # this point in time.
 	}
 	out
 }
