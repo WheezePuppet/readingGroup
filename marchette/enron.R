@@ -17,7 +17,7 @@ enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001)
 	## we can pretend the edges are coming in at distinct
 	## times. So, an email from a to b,c,d will end up being
 	## three edges in a random order, all sent during the same second
-   times <- edges$time+runif(nrow(edges))
+    times <- edges$time+runif(nrow(edges))
 	edges <- edges[order(times),]
 	times <- sort(times)
 
