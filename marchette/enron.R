@@ -78,22 +78,109 @@ enronQ <- function(edges,remove.dups=TRUE,alpha=0.00001,interactive=TRUE)
     out
 }
 
+enronQAgg <- function(edges,remove.dups=TRUE,alpha=0.00001,interactive=TRUE,
+                      timestep=3600*24*7)
+{
+	 start <- min(edges[,1])
+	 omega <- max(edges[,1])
+	 gtimes <- seq(start,omega+timestep,by=timestep)
+    ## Remove self-loops.
+    a <- which(edges[,2]==edges[,3])
+    if(length(a)>0) edges <- edges[-a,]
+
+    ## Remove duplicate edges. Some emails have the same
+    ## people in the to and cc fields, and so these people
+    ## show up more than once in the same email.
+    if(remove.dups){
+        edges <- unique(edges)
+    }
+
+	 ntimes <- length(gtimes)-1
+
+    # Q -- the (evolving) centrality matrix. Each time through the loop,
+    # include the factor for the graph with (only) the ith edge.
+    # A -- the factor for the ith edge. This is (I - alpha*A_i)^-1, where A_i
+    # is the adjacency matrix that includes only the ith edge.
+    Q <- diag(184)
+
+    if (interactive) {
+        pb <- tkProgressBar(title=paste0("remove.dups=",remove.dups,
+            ", alpha=",alpha),min=0,max=ntimes)
+    }
+
+    out <- data.frame(time=gtimes[1:ntimes],
+                      most.influenced.user=rep(0L,ntimes),
+                      most.influenced.value=rep(0.0,ntimes),
+                      most.influential.user=rep(0L,ntimes),
+                      most.influential.value=rep(0.0,ntimes))
+	 for(i in 1:ntimes){
+
+        if (interactive) {
+            setTkProgressBar(pb,i,label=paste0("Computing Katz centrality: ",
+                round(100*i/length(gtimes),0),"%"))
+        }
+
+		  A <- diag(184)
+		  e <- unique(edges[edges[,1]>=gtimes[i] & edges[,1]<gtimes[i+1],
+		              2:3,drop=FALSE])
+		  for(j in 1:nrow(e)) A[e[j,1],e[j,2]] <- -alpha
+		  B <- solve(A)
+
+        # Multiply the ith edge's factor into Q, and reset A.
+        Q <- Q%*%B
+
+        # Compute the "most influenced" (receiving) vertex and "most
+        # influential" (sending) vertex, if the dynamic graph were to stop at
+        # this point in time.
+        influenced.metrics <- apply(Q,1,sum)
+        influencing.metrics <- apply(Q,2,sum)
+        out$most.influenced.user[i] <- which.max(influenced.metrics)
+        out$most.influenced.value[i] <- max(influenced.metrics)
+        out$most.influential.user[i] <- which.max(influencing.metrics)
+        out$most.influential.value[i] <- max(influencing.metrics)
+    }
+    if (interactive) {
+        close(pb)
+    }
+    out
+}
+
 # Load enron.RData and plot the max Katz Centrality over time, removing dup
 # edges and using baseline alpha.
 test.stephen <- function() {
     load("enron.RData")
     out <- enronQ(edges)
     par(mfrow=c(2,1))
-    plot(out$time,out$most.influenced.value,pch=20,
+	 pchs <- (out$most.influenced.user%%20)+1
+    plot(out$time,out$most.influenced.value,pch=pchs,
         col=out$most.influenced.user,xlab="Time",
         ylab="Katz Centrality: influenced")
     legend('topleft',legend=users[unique(out$most.influenced.user),1],
-        col=unique(out$most.influenced.user), pch=20)
-    plot(out$time,out$most.influential.value,pch=20,
+        col=unique(out$most.influenced.user), pch=unique(pchs))
+	 pchs <- (out$most.influential.user%%20)+1
+    plot(out$time,out$most.influential.value,pch=pchs,
         col=out$most.influential.user,xlab="Time",
         ylab="Katz Centrality: influential")
     legend('topleft',legend=users[unique(out$most.influential.user),1],
-        col=unique(out$most.influential.user), pch=20)
+        col=unique(out$most.influential.user), pch=unique(pchs))
+}
+
+test.dave <- function(timestep=3600*24*7) {
+    load("enron.RData")
+    out <- enronQAgg(edges,timestep=timestep)
+    par(mfrow=c(2,1))
+	 pchs <- (out$most.influenced.user%%20)+1
+    plot(out$time,out$most.influenced.value,pch=pchs,
+        col=out$most.influenced.user,xlab="Time",
+        ylab="Katz Centrality: influenced")
+    legend('topleft',legend=users[unique(out$most.influenced.user),1],
+        col=unique(out$most.influenced.user), pch=unique(pchs))
+	 pchs <- (out$most.influential.user%%20)+1
+    plot(out$time,out$most.influential.value,pch=pchs,
+        col=out$most.influential.user,xlab="Time",
+        ylab="Katz Centrality: influential")
+    legend('topleft',legend=users[unique(out$most.influential.user),1],
+        col=unique(out$most.influential.user), pch=unique(pchs))
 }
 
 test <- function()
