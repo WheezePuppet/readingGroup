@@ -1,0 +1,105 @@
+
+(Note: these are not strict sequences -- these are very roughly semi-ordered
+sets of topics.)
+
+
+219:
+----
+Python (6 weeks)
+    environment? IPython? IDLE? Spyder?
+    basic data types
+        ints
+        strings
+        tuples
+        lists
+        dictionaries
+    basics (if statements, loops)
+    functions
+    Pandas
+
+Data Acquisition (1.5 weeks)
+    Structured files
+    Unstructured text files
+        Doing word counts and some simple things with them
+
+EDA (1.5 weeks)
+    histograms
+    scatter plots
+    line plots
+    box plots*
+
+Data Wrangling (1.5 weeks)
+    Sanity checking and outlier detection
+    Recoding
+    Rescaling
+
+Probability & Statistics (1 week)
+    the concept of error
+    mean & sd
+
+Very very basic ML concepts (the rest -- 3.5 weeks)
+    clustering
+    classification
+    what is k-means? what is knn?
+
+
+319:
+----
+Vectors & Matrices in NumPy (1 week)
+
+Data Acquisition (4 weeks)
+    Talking to APIs
+    Talking to SQL and NoSQL Databases
+
+Data Wrangling (2 weeks)
+    Data fusion*
+    "tidy" data (in the Hadley Wickham sense)*
+    Additional info on recoding
+
+ML - concepts (2 weeks)
+    Concepts (supervised vs. unsupervised, goals, measuring classifier 
+        performance, etc.)
+    Feature selection
+    Bias-variance tradeoff; overfitting
+    The curse of dimensionality
+
+ML - write from scratch (3 weeks)
+    knn
+    Naive Bayes
+    document similarity based on word counts (or maybe bigrams)
+    Recommender Systems
+    Clustering (unsupervised)
+        k-means
+
+ML - use a package (3 weeks)
+    Feature selection (scikits)
+    Decision Trees
+    Network Analysis (igraph?)
+    Clustering (unsupervised)
+        hierarchical clustering
+        EM
+
+
+In neither course:
+------------------
+recursion
+Linear regression
+Multiple regression
+Logistic regression
+Neural Nets
+
+Prob & Stats
+    random variables
+    descriptive statistics
+    independence (but NB needs this)
+    conditional prob & Bayes Theorem (but NB needs this)
+    discrete & continuous distributions
+    Central Limit Theorem
+    hypothesis testing
+    confidence intervals
+
+Gradient Descent
+
+Dimensionality reduction
+
+MapReduce
